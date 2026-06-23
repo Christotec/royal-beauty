@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #FBF6F0;
+  --foreground: #1F1417;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Signature gold halo ring, echoes the circular logo mark */
+.gold-halo {
+  position: relative;
+}
+.gold-halo::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 9999px;
+  border: 1.5px solid #C9A24B;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.divider-gold {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #C9A24B, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fade-up {
+    animation: fadeUp 0.6s ease-out both;
+  }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
