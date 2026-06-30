@@ -1,29 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getActiveProducts } from "@/lib/products";
-import { CATEGORY_LIST, CATEGORY_LABELS, type Category } from "@/lib/types";
+import { getActiveCategories } from "@/lib/categories";
+import { getActiveServices } from "@/lib/services";
 import ProductCard from "@/components/ProductCard";
+import ServicesRow from "@/components/ServicesRow";
 
-export const revalidate = 60;
-
-// Temporary stock photos for the category tiles. Replace these with the
-// client's real product photos when she has them, just swap the URL string
-// for each category below.
-const CATEGORY_IMAGES: Record<Category, string> = {
-  "human-hair":
-    "https://images.unsplash.com/photo-1595959183082-7b570b7e08e2?w=600&h=750&fit=crop",
-  "hair-extensions":
-    "https://images.unsplash.com/photo-1605497788044-5a32c7078486?w=600&h=750&fit=crop",
-  "hair-accessories":
-    "https://images.unsplash.com/photo-1522338242992-e1a54906a8da?w=600&h=750&fit=crop",
-  bags:
-    "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=600&h=750&fit=crop",
-  shoes:
-    "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=600&h=750&fit=crop",
-};
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const products = await getActiveProducts();
+  const [products, categories, services] = await Promise.all([
+    getActiveProducts(),
+    getActiveCategories(),
+    getActiveServices(),
+  ]);
   const featured = products.slice(0, 4);
 
   return (
@@ -62,8 +52,8 @@ export default async function HomePage() {
           <div className="order-1 sm:order-2 flex justify-center">
             <div className="gold-halo relative w-44 h-44 sm:w-72 sm:h-72 rounded-full overflow-hidden border-4 border-gold shadow-xl">
               <Image
-                src="/images/logo.jpg"
-                alt="Royal Beauty bridal makeup artistry"
+                src="/images/logo.jpg?v=2"
+                alt="Royal Beauty Unisex Salon"
                 fill
                 className="object-cover"
                 priority
@@ -102,7 +92,7 @@ export default async function HomePage() {
               controls
               playsInline
               preload="metadata"
-              poster="/images/logo.jpg"
+              poster="/images/logo.jpg?v=2"
             >
               <source src="/videos/royal-beauty-ad.mp4" type="video/mp4" />
             </video>
@@ -110,35 +100,48 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* SERVICES SCROLL ROW */}
+      {services.length > 0 && <ServicesRow services={services} />}
+
       {/* CATEGORIES */}
-      <section className="mx-auto max-w-6xl px-5 sm:px-8 py-10 sm:py-16">
-        <h2 className="font-display text-2xl sm:text-3xl text-burgundy font-semibold text-center mb-2">
-          Shop by Category
-        </h2>
-        <p className="text-center text-charcoal/70 mb-10 text-sm sm:text-base">
-          Every piece sourced for quality, softness, and a natural finish.
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-          {CATEGORY_LIST.map((cat) => (
-            <Link
-              key={cat}
-              href={`/products?category=${cat}`}
-              className="group relative rounded-2xl overflow-hidden border border-gold/40 aspect-[4/5] hover:border-gold hover:shadow-md transition-all"
-            >
-              <Image
-                src={CATEGORY_IMAGES[cat]}
-                alt={CATEGORY_LABELS[cat]}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-burgundy-dark/80 via-burgundy-dark/10 to-transparent" />
-              <span className="absolute bottom-3 left-0 right-0 text-center font-display text-sm sm:text-base text-cream font-semibold px-2 leading-snug">
-                {CATEGORY_LABELS[cat]}
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {categories.length > 0 && (
+        <section className="mx-auto max-w-6xl px-5 sm:px-8 py-10 sm:py-16">
+          <h2 className="font-display text-2xl sm:text-3xl text-burgundy font-semibold text-center mb-2">
+            Shop by Category
+          </h2>
+          <p className="text-center text-charcoal/70 mb-10 text-sm sm:text-base">
+            Every piece sourced for quality, softness, and a natural finish.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+            {categories.map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/products?category=${cat.slug}`}
+                className="group relative rounded-2xl overflow-hidden border border-gold/40 aspect-[4/5] hover:border-gold hover:shadow-md transition-all bg-blush"
+              >
+                {cat.image_url ? (
+                  <Image
+                    src={cat.image_url}
+                    alt={cat.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="font-display text-burgundy/40 text-sm text-center px-2">
+                      {cat.name}
+                    </span>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-burgundy-dark/80 via-burgundy-dark/10 to-transparent" />
+                <span className="absolute bottom-3 left-0 right-0 text-center font-display text-sm sm:text-base text-cream font-semibold px-2 leading-snug">
+                  {cat.name}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* FEATURED PRODUCTS */}
       {featured.length > 0 && (
@@ -159,7 +162,7 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* WALK-IN SERVICES PROMO */}
+      {/* WHY CHOOSE US */}
       <section className="bg-blush py-10 sm:py-16">
         <div className="mx-auto max-w-6xl px-5 sm:px-8 grid sm:grid-cols-2 gap-6 sm:gap-8 items-center">
           <div>

@@ -4,11 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
-import { CATEGORY_LIST, CATEGORY_LABELS } from "@/lib/types";
 import type { Category, Product, ProductVariant } from "@/lib/types";
 
 type VariantDraft = {
-  id: string; // temp client id, or real DB id if editing existing
+  id: string;
   label: string;
   price: string;
   image_url: string | null;
@@ -30,15 +29,19 @@ function makeTempId() {
 
 export default function ProductForm({
   existingProduct,
+  categories,
 }: {
   existingProduct?: Product;
+  categories: Category[];
 }) {
   const router = useRouter();
   const isEditing = !!existingProduct;
 
   const [name, setName] = useState(existingProduct?.name ?? "");
   const [description, setDescription] = useState(existingProduct?.description ?? "");
-  const [category, setCategory] = useState<Category>(existingProduct?.category ?? "human-hair");
+  const [categoryId, setCategoryId] = useState<string>(
+    existingProduct?.category_id ?? categories[0]?.id ?? ""
+  );
   const [isActive, setIsActive] = useState(existingProduct?.is_active ?? true);
   const [mainImageUrl, setMainImageUrl] = useState<string | null>(existingProduct?.image_url ?? null);
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
@@ -102,13 +105,16 @@ export default function ProductForm({
       setError("Add at least one option with a label and price.");
       return;
     }
+    if (!categoryId) {
+      setError("Please choose a category. If there are none, add one under Categories first.");
+      return;
+    }
 
     setSaving(true);
 
     try {
       const supabase = createClient();
 
-      // Upload main image if a new file was chosen
       let finalMainImageUrl = mainImageUrl;
       if (mainImageFile) {
         finalMainImageUrl = await uploadImage(mainImageFile);
@@ -124,7 +130,7 @@ export default function ProductForm({
           .update({
             name,
             description: description || null,
-            category,
+            category_id: categoryId,
             image_url: finalMainImageUrl,
             is_active: isActive,
           })
@@ -137,7 +143,7 @@ export default function ProductForm({
             name,
             slug,
             description: description || null,
-            category,
+            category_id: categoryId,
             image_url: finalMainImageUrl,
             is_active: isActive,
           })
@@ -147,7 +153,6 @@ export default function ProductForm({
         productId = data.id;
       }
 
-      // Handle variants: upload new images, then upsert rows
       for (let i = 0; i < validVariants.length; i++) {
         const v = validVariants[i];
         let variantImageUrl = v.image_url;
@@ -178,7 +183,6 @@ export default function ProductForm({
         }
       }
 
-      // Remove variants that existed before but were deleted from the form
       if (isEditing && existingProduct?.variants) {
         const remainingIds = new Set(validVariants.filter((v) => v.isExisting).map((v) => v.id));
         const removedIds = existingProduct.variants
@@ -209,7 +213,6 @@ export default function ProductForm({
         <p className="text-sm text-burgundy bg-blush rounded-lg px-4 py-3">{error}</p>
       )}
 
-      {/* Basic info */}
       <div className="rounded-2xl border border-gold/30 bg-white p-6">
         <h2 className="font-display text-lg text-burgundy font-semibold mb-5">
           Product Details
@@ -247,17 +250,23 @@ export default function ProductForm({
             <label className="block text-sm font-semibold text-charcoal mb-1.5">
               Category
             </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as Category)}
-              className="w-full rounded-lg border border-gold/40 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold"
-            >
-              {CATEGORY_LIST.map((cat) => (
-                <option key={cat} value={cat}>
-                  {CATEGORY_LABELS[cat]}
-                </option>
-              ))}
-            </select>
+            {categories.length === 0 ? (
+              <p className="text-sm text-burgundy bg-blush rounded-lg px-3 py-2">
+                No categories yet. Add one under the Categories tab first.
+              </p>
+            ) : (
+              <select
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="w-full rounded-lg border border-gold/40 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold"
+              >
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div>
@@ -301,7 +310,6 @@ export default function ProductForm({
         </div>
       </div>
 
-      {/* Variants */}
       <div className="rounded-2xl border border-gold/30 bg-white p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="font-display text-lg text-burgundy font-semibold">

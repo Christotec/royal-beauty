@@ -1,54 +1,12 @@
-import ServiceCard from "@/components/ServiceCard";
+import Image from "next/image";
+import Link from "next/link";
+import { getActiveServices } from "@/lib/services";
 
-// Each service uses a photo. The 4 that were hard to match with stock photos
-// now point to local files you place in: public/images/services/
-// Just drop a photo with the exact filename shown and it appears here.
-// You can do this for ANY service: set its "image" to a local path and drop
-// the file in that folder.
-const SERVICES = [
-  {
-    name: "Hydra Facial",
-    description: "Deep cleansing, hydrating facial treatment for a refreshed, glowing complexion.",
-    image: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&h=450&fit=crop",
-  },
-  {
-    name: "Professional Makeup",
-    description: "Bridal, event and everyday makeup application by our skilled artists.",
-    image: "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&h=450&fit=crop",
-  },
-  {
-    name: "Braiding Services",
-    description: "All styles of cornrows and braids, neatly and skillfully done.",
-    image: "/images/services/braiding.jpg",
-  },
-  {
-    name: "Wig Revamping",
-    description: "Bring an old wig back to life: washing, styling, and restoring its shine.",
-    image: "/images/services/wig-revamping.jpg",
-  },
-  {
-    name: "Eyelash Extensions",
-    description: "Natural or dramatic lash extensions tailored to your look.",
-    image: "/images/services/eyelash.jpg",
-  },
-  {
-    name: "Manicure & Pedicure",
-    description: "Full nail care and polish for hands and feet.",
-    image: "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=600&h=450&fit=crop",
-  },
-  {
-    name: "Barbing",
-    description: "Sharp, clean cuts and lineups for men and boys.",
-    image: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&h=450&fit=crop",
-  },
-  {
-    name: "Cornrow & Braided Wigs",
-    description: "Custom braided wig styles, made to order in all styles.",
-    image: "/images/services/cornrow.jpg",
-  },
-];
+export const dynamic = "force-dynamic";
 
-export default function ServicesPage() {
+export default async function ServicesPage() {
+  const services = await getActiveServices();
+
   return (
     <main className="mx-auto max-w-6xl px-5 sm:px-8 py-10 sm:py-16">
       <div className="mb-10 sm:mb-12 max-w-2xl">
@@ -59,21 +17,72 @@ export default function ServicesPage() {
           Salon Services
         </h1>
         <p className="text-charcoal/75 leading-relaxed text-sm sm:text-base">
-          Royal Beauty is a full unisex salon. Tap any service below to book
-          on WhatsApp, or simply walk in at our Karsana, Abuja location.
+          Royal Beauty is a full unisex salon. Tap any service to see photos
+          and book on WhatsApp, or simply walk in at our Karsana, Abuja
+          location.
         </p>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-        {SERVICES.map((service) => (
-          <ServiceCard
-            key={service.name}
-            name={service.name}
-            description={service.description}
-            image={service.image}
-          />
-        ))}
-      </div>
+      {services.length === 0 ? (
+        <div className="text-center py-20 border border-dashed border-gold/40 rounded-2xl">
+          <p className="font-display text-lg text-burgundy mb-2">
+            Services coming soon
+          </p>
+          <p className="text-charcoal/60 text-sm">
+            Check back shortly, or message us on WhatsApp to book.
+          </p>
+        </div>
+      ) : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          {services.map((service) => {
+            const cover =
+              service.cover_image_url || service.images?.[0]?.image_url;
+            const photoCount = service.images?.length ?? 0;
+            return (
+              <Link
+                key={service.id}
+                href={`/services/${service.slug}`}
+                className="group flex flex-col rounded-2xl border border-gold/30 bg-white overflow-hidden hover:border-gold hover:shadow-md transition-all"
+              >
+                <div className="relative aspect-[4/3] bg-blush">
+                  {cover ? (
+                    <Image
+                      src={cover}
+                      alt={service.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="font-display text-burgundy/40 text-base text-center px-4">
+                        {service.name}
+                      </span>
+                    </div>
+                  )}
+                  {photoCount > 1 && (
+                    <span className="absolute top-2 right-2 text-[11px] font-semibold bg-black/60 text-white px-2 py-0.5 rounded-full">
+                      {photoCount} photos
+                    </span>
+                  )}
+                </div>
+                <div className="p-5">
+                  <h3 className="font-display text-lg text-burgundy font-semibold mb-2">
+                    {service.name}
+                  </h3>
+                  {service.description && (
+                    <p className="text-charcoal/70 text-sm leading-relaxed line-clamp-2">
+                      {service.description}
+                    </p>
+                  )}
+                  <span className="inline-block mt-3 text-sm font-semibold text-burgundy group-hover:text-gold-dark transition-colors">
+                    View &amp; Book &rarr;
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </main>
   );
 }

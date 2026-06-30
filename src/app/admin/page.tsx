@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
-import { CATEGORY_LABELS } from "@/lib/types";
 import type { Product } from "@/lib/types";
 import { formatNaira } from "@/lib/whatsapp";
 import DeleteProductButton from "@/components/admin/DeleteProductButton";
@@ -12,7 +11,7 @@ export default async function AdminDashboardPage() {
   const supabase = await createClient();
   const { data: products, error } = await supabase
     .from("products")
-    .select("*, variants:product_variants(*)")
+    .select("*, variants:product_variants(*), category:categories(*)")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -84,7 +83,7 @@ export default async function AdminDashboardPage() {
                     {product.name}
                   </p>
                   <p className="text-xs text-charcoal/60">
-                    {CATEGORY_LABELS[product.category]} &middot;{" "}
+                    {product.category?.name ?? "Uncategorized"} &middot;{" "}
                     {variants.length} option{variants.length === 1 ? "" : "s"}
                     {lowestPrice !== null && ` · from ${formatNaira(lowestPrice)}`}
                   </p>

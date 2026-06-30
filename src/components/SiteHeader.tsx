@@ -24,7 +24,7 @@ export default function SiteHeader() {
           <Link href="/" className="flex items-center gap-3 group">
             <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-gold flex-shrink-0">
               <Image
-                src="/images/logo.jpg"
+                src="/images/logo.jpg?v=2"
                 alt="Royal Beauty Unisex Salon logo"
                 fill
                 className="object-cover"

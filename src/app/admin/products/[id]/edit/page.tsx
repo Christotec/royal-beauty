@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import ProductForm from "@/components/admin/ProductForm";
-import type { Product } from "@/lib/types";
+import type { Product, Category } from "@/lib/types";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -13,11 +13,18 @@ export default async function EditProductPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: product, error } = await supabase
-    .from("products")
-    .select("*, variants:product_variants(*)")
-    .eq("id", id)
-    .single();
+  const [{ data: product, error }, { data: cats }] = await Promise.all([
+    supabase
+      .from("products")
+      .select("*, variants:product_variants(*)")
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("categories")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true }),
+  ]);
 
   if (error || !product) notFound();
 
@@ -26,7 +33,10 @@ export default async function EditProductPage({
       <h1 className="font-display text-2xl text-burgundy font-semibold mb-8">
         Edit Product
       </h1>
-      <ProductForm existingProduct={product as Product} />
+      <ProductForm
+        existingProduct={product as Product}
+        categories={(cats ?? []) as Category[]}
+      />
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import { getActiveProducts } from "@/lib/products";
-import { CATEGORY_LIST, CATEGORY_LABELS, type Category } from "@/lib/types";
+import { getActiveCategories, getCategoryBySlug } from "@/lib/categories";
 import ProductCard from "@/components/ProductCard";
 import Link from "next/link";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function ProductsPage({
   searchParams,
@@ -11,11 +11,13 @@ export default async function ProductsPage({
   searchParams: Promise<{ category?: string }>;
 }) {
   const params = await searchParams;
-  const activeCategory = CATEGORY_LIST.includes(params.category as Category)
-    ? (params.category as Category)
-    : undefined;
+  const categories = await getActiveCategories();
 
-  const products = await getActiveProducts(activeCategory);
+  const activeCategory = params.category
+    ? await getCategoryBySlug(params.category)
+    : null;
+
+  const products = await getActiveProducts(activeCategory?.id);
 
   return (
     <main className="mx-auto max-w-6xl px-5 sm:px-8 py-12 sm:py-16">
@@ -40,17 +42,17 @@ export default async function ProductsPage({
         >
           All
         </Link>
-        {CATEGORY_LIST.map((cat) => (
+        {categories.map((cat) => (
           <Link
-            key={cat}
-            href={`/products?category=${cat}`}
+            key={cat.id}
+            href={`/products?category=${cat.slug}`}
             className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-              activeCategory === cat
+              activeCategory?.id === cat.id
                 ? "bg-burgundy text-cream"
                 : "bg-white border border-gold/40 text-charcoal hover:border-gold"
             }`}
           >
-            {CATEGORY_LABELS[cat]}
+            {cat.name}
           </Link>
         ))}
       </div>
