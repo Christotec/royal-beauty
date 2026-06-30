@@ -83,7 +83,7 @@ export default function ServiceDetail({ service }: { service: Service }) {
             </p>
           )}
 
-          
+          <a
             href={whatsappLink}
             target="_blank"
             rel="noopener noreferrer"
